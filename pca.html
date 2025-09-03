@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PCA Pump Dose Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --panel: #111827; /* gray-900 */
+      --muted: #94a3b8; /* slate-400 */
+      --text: #e5e7eb; /* gray-200 */
+      --accent: #22d3ee; /* cyan-400 */
+      --danger: #fca5a5; /* red-300 */
+      --ok: #a7f3d0; /* green-200 */
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+      background: radial-gradient(1200px 800px at 20% -10%, #1f2937 0%, var(--bg) 60%);
+      color: var(--text);
+    }
+    header { padding: 24px 16px; text-align: center; }
+    header h1 { margin: 0 0 8px; font-size: clamp(1.2rem, 1.2rem + 1.2vw, 2rem); }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1.05fr 0.95fr; }
+    }
+
+    .card { background: linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%);
+      border: 1px solid #1f2937; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.1rem; }
+    .help { color: var(--muted); font-size: 0.9rem; margin: 4px 0 12px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .row-4 { grid-template-columns: repeat(4, 1fr); }
+    .row > label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+
+    select, input[type="number"], input[type="text"] {
+      width: 100%; padding: 10px 12px; background: #0b1220; color: var(--text);
+      border: 1px solid #223246; border-radius: 10px; outline: none; transition: border .15s;
+    }
+    select:focus, input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,211,238, .15); }
+
+    .inline-note { font-size: .85rem; color: var(--muted); }
+
+    .switch {
+      display: inline-flex; align-items: center; gap: 8px; user-select: none;
+    }
+    .switch input { appearance: none; width: 42px; height: 24px; background: #223246; border-radius: 999px; position: relative; outline: none; transition: background .2s; }
+    .switch input::after {
+      content: ""; width: 18px; height: 18px; background: white; position: absolute; top: 3px; left: 3px; border-radius: 999px; transition: transform .2s;
+    }
+    .switch input:checked { background: #1aa3b6; }
+    .switch input:checked::after { transform: translateX(18px); }
+
+    .muted { color: var(--muted); font-size: .9rem; }
+    .bad { color: var(--danger); }
+    .good { color: var(--ok); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; text-align: right; border-bottom: 1px dashed #1f2937; }
+    th:first-child, td:first-child { text-align: left; }
+    tfoot td { font-weight: 700; }
+
+    .footer-note { margin-top: 10px; font-size: .85rem; color: var(--muted); }
+    .tiny { font-size: .8rem; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    button.copy {
+      background: #0b1220; color: var(--text); border: 1px solid #223246; border-radius: 10px; padding: 8px 12px; cursor: pointer;
+    }
+    button.copy:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,211,238, .15); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PCA Pump Dose Calculator</h1>
+    <p>Supports <b>Morphine</b> and <b>Dilaudid (Hydromorphone)</b>. Adjust concentration, basal rate, demand dose, lockout, duration, and button presses. Calculates totals in <b>mg</b> and <b>mL</b>.</p>
+  </header>
+  <div class="wrap">
+    <div class="grid">
+      <section class="card">
+        <h2>Inputs</h2>
+        <p class="help">All fields update calculations instantly.</p>
+
+        <div class="row">
+          <label>
+            Medication
+            <select id="med">
+              <option value="morphine">Morphine</option>
+              <option value="dilaudid">Dilaudid (Hydromorphone)</option>
+            </select>
+          </label>
+          <label>
+            Concentration (mg/mL)
+            <input type="number" id="conc" step="0.001" min="0" placeholder="e.g., 1 for Morphine, 0.2 for Dilaudid" />
+            <span class="inline-note">Change medication to auto-fill a typical concentration (editable).</span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Continuous Rate — mg/hr
+            <input type="number" id="basalMgHr" step="0.001" min="0" value="0" />
+            <span class="inline-note">Will sync with mL/hr using concentration.</span>
+          </label>
+          <label>
+            Continuous Rate — mL/hr
+            <input type="number" id="basalMlHr" step="0.001" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Demand Dose — mg per dose
+            <input type="number" id="demandMg" step="0.001" min="0" value="0" />
+          </label>
+          <label>
+            Demand Dose — mL per dose
+            <input type="number" id="demandMl" step="0.001" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Lockout Interval (minutes)
+            <input type="number" id="lockout" step="1" min="0" value="10" />
+            <span class="inline-note">Typical orders use 6–15 min; set to 0 to ignore.</span>
+          </label>
+          <label>
+            Duration of Therapy (hours)
+            <input type="number" id="hours" step="0.01" min="0" value="4" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            Button Presses (attempts)
+            <input type="number" id="presses" step="1" min="0" value="0" />
+          </label>
+          <label>
+            Treat presses as <b>delivered</b> (override lockout)
+            <span class="switch"><input id="override" type="checkbox" /><span class="muted">If on, demand doses delivered = presses.</span></span>
+          </label>
+        </div>
+
+        <div class="btn-row tiny">
+          <button class="copy" id="fillMorphine">Morphine presets</button>
+          <button class="copy" id="fillDilaudid">Dilaudid presets</button>
+          <span class="muted">Presets are typical examples; edit any field.</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Results</h2>
+        <p class="help">Outputs show basal, demand, and totals in mg and mL. Includes calculator logic for lockout.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>mg</th>
+              <th>mL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Basal delivered</td>
+              <td id="basalMgOut">0</td>
+              <td id="basalMlOut">0</td>
+            </tr>
+            <tr>
+              <td>Demand delivered</td>
+              <td id="demandMgOut">0</td>
+              <td id="demandMlOut">0</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Total delivered</td>
+              <td id="totalMgOut">0</td>
+              <td id="totalMlOut">0</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="row">
+          <div>
+            <p class="muted">Average total rate over duration</p>
+            <div class="row">
+              <div class="muted">mg/hr:</div>
+              <div id="avgMgHr">0</div>
+            </div>
+            <div class="row">
+              <div class="muted">mL/hr:</div>
+              <div id="avgMlHr">0</div>
+            </div>
+          </div>
+          <div>
+            <p class="muted">Demand dosing details</p>
+            <div class="row">
+              <div class="muted">Max doses allowed by lockout:</div>
+              <div id="maxByLockout">0</div>
+            </div>
+            <div class="row">
+              <div class="muted">Delivered demand doses:</div>
+              <div id="deliveredDoses">0</div>
+            </div>
+            <div class="row">
+              <div class="muted">Ignored due to lockout:</div>
+              <div id="ignoredDoses">0</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="footer-note">This tool is for educational and workflow support only and does not replace clinical judgment, institutional protocols, or pump programming guidelines. Double-check all entries and calculations.</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>How calculations work</h2>
+      <ul class="tiny">
+        <li><b>Basal mg</b> = (continuous mg/hr) × hours. <b>Basal mL</b> = Basal mg ÷ concentration.</li>
+        <li><b>Demand mL per dose</b> = Demand mg ÷ concentration (and vice versa).</li>
+        <li><b>Max demand doses by lockout</b> = floor((hours × 60) ÷ lockout minutes). If lockout is 0 or override is on, max is unlimited.</li>
+        <li><b>Delivered demand doses</b> =
+          <span class="muted">override on</span>: equals button presses; 
+          <span class="muted">override off</span>: min(presses, max by lockout).</li>
+        <li><b>Demand mg</b> = delivered demand doses × demand mg per dose. <b>Demand mL</b> = Demand mg ÷ concentration.</li>
+        <li><b>Totals</b> = Basal + Demand (mg and mL). <b>Average rates</b> = Totals ÷ hours.</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const med = el('med');
+    const conc = el('conc');
+    const basalMgHr = el('basalMgHr');
+    const basalMlHr = el('basalMlHr');
+    const demandMg = el('demandMg');
+    const demandMl = el('demandMl');
+    const lockout = el('lockout');
+    const hours = el('hours');
+    const presses = el('presses');
+    const override = el('override');
+
+    const basalMgOut = el('basalMgOut');
+    const basalMlOut = el('basalMlOut');
+    const demandMgOut = el('demandMgOut');
+    const demandMlOut = el('demandMlOut');
+    const totalMgOut = el('totalMgOut');
+    const totalMlOut = el('totalMlOut');
+    const avgMgHr = el('avgMgHr');
+    const avgMlHr = el('avgMlHr');
+    const maxByLockout = el('maxByLockout');
+    const deliveredDoses = el('deliveredDoses');
+    const ignoredDoses = el('ignoredDoses');
+
+    function round(value) {
+      if (!isFinite(value)) return 0;
+      return Math.round((value + Number.EPSILON) * 1000) / 1000; // 3 decimals
+    }
+
+    function syncFromMgHr() {
+      const c = Number(conc.value);
+      const mgHr = Number(basalMgHr.value);
+      if (c > 0) basalMlHr.value = round(mgHr / c);
+      else basalMlHr.value = 0;
+    }
+
+    function syncFromMlHr() {
+      const c = Number(conc.value);
+      const mlHr = Number(basalMlHr.value);
+      basalMgHr.value = round(mlHr * c);
+    }
+
+    function syncDemandFromMg() {
+      const c = Number(conc.value);
+      const mg = Number(demandMg.value);
+      if (c > 0) demandMl.value = round(mg / c); else demandMl.value = 0;
+    }
+
+    function syncDemandFromMl() {
+      const c = Number(conc.value);
+      const ml = Number(demandMl.value);
+      demandMg.value = round(ml * c);
+    }
+
+    function applyMedPresets(which) {
+      if (which === 'morphine') {
+        med.value = 'morphine';
+        conc.value = 1; // mg/mL
+        basalMgHr.value = 1; // example
+        syncFromMgHr();
+        demandMg.value = 0.5; syncDemandFromMg();
+        lockout.value = 10; hours.value = 4; presses.value = 6; override.checked = false;
+      } else if (which === 'dilaudid') {
+        med.value = 'dilaudid';
+        conc.value = 0.2; // mg/mL typical
+        basalMgHr.value = 0.2; // example
+        syncFromMgHr();
+        demandMg.value = 0.1; syncDemandFromMg();
+        lockout.value = 10; hours.value = 4; presses.value = 6; override.checked = false;
+      }
+      calculate();
+    }
+
+    function calculate() {
+      const c = Number(conc.value);
+      const hr = Math.max(0, Number(hours.value));
+      const bMgHr = Math.max(0, Number(basalMgHr.value));
+      const dMg = Math.max(0, Number(demandMg.value));
+      const L = Math.max(0, Number(lockout.value));
+      const P = Math.max(0, Math.floor(Number(presses.value)));
+      const ovr = !!override.checked;
+
+      // Basal totals
+      const basalMg = bMgHr * hr;
+      const basalMl = c > 0 ? basalMg / c : 0;
+
+      // Lockout logic
+      let maxDoses;
+      if (ovr || L === 0) {
+        maxDoses = Infinity; // no lockout limit
+      } else {
+        maxDoses = Math.floor((hr * 60) / L);
+      }
+      const delivered = ovr ? P : Math.min(P, isFinite(maxDoses) ? maxDoses : P);
+      const ignored = Math.max(0, P - delivered);
+
+      // Demand totals
+      const demandTotalMg = delivered * dMg;
+      const demandTotalMl = c > 0 ? demandTotalMg / c : 0;
+
+      const totalMg = basalMg + demandTotalMg;
+      const totalMl = basalMl + demandTotalMl;
+
+      const avgMg = hr > 0 ? totalMg / hr : 0;
+      const avgMl = hr > 0 ? totalMl / hr : 0;
+
+      // Output
+      basalMgOut.textContent = round(basalMg);
+      basalMlOut.textContent = round(basalMl);
+      demandMgOut.textContent = round(demandTotalMg);
+      demandMlOut.textContent = round(demandTotalMl);
+      totalMgOut.textContent = round(totalMg);
+      totalMlOut.textContent = round(totalMl);
+      avgMgHr.textContent = round(avgMg);
+      avgMlHr.textContent = round(avgMl);
+      maxByLockout.textContent = isFinite(maxDoses) ? maxDoses : '—';
+      deliveredDoses.textContent = delivered;
+      ignoredDoses.textContent = ignored;
+    }
+
+    // Event listeners
+    conc.addEventListener('input', () => { syncFromMgHr(); syncDemandFromMg(); calculate(); });
+    basalMgHr.addEventListener('input', () => { syncFromMgHr(); calculate(); });
+    basalMlHr.addEventListener('input', () => { syncFromMlHr(); calculate(); });
+    demandMg.addEventListener('input', () => { syncDemandFromMg(); calculate(); });
+    demandMl.addEventListener('input', () => { syncDemandFromMl(); calculate(); });
+    lockout.addEventListener('input', calculate);
+    hours.addEventListener('input', calculate);
+    presses.addEventListener('input', calculate);
+    override.addEventListener('change', calculate);
+
+    med.addEventListener('change', () => {
+      if (med.value === 'morphine' && !conc.value) conc.value = 1;
+      if (med.value === 'dilaudid' && !conc.value) conc.value = 0.2;
+      calculate();
+    });
+
+    document.getElementById('fillMorphine').addEventListener('click', () => applyMedPresets('morphine'));
+    document.getElementById('fillDilaudid').addEventListener('click', () => applyMedPresets('dilaudid'));
+
+    // Initialize defaults
+    applyMedPresets('morphine');
+  </script>
+</body>
+</html>

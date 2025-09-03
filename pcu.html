@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCA Pump Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: grid;
+      gap: 15px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 10px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .results {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    .results p {
+      margin: 8px 0;
+      font-size: 1rem;
+    }
+    @media (min-width: 700px) {
+      .container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .input-group {
+        flex-direction: column;
+      }
+      button {
+        grid-column: span 2;
+        justify-self: center;
+        width: 200px;
+      }
+      .results {
+        grid-column: span 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>PCA Pump Calculator</h1>
+  <div class="container">
+    <div class="input-group">
+      <label for="medication">Medication</label>
+      <select id="medication">
+        <option value="morphine">Morphine</option>
+        <option value="dilaudid">Dilaudid</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="concentration">Concentration (mg/mL)</label>
+      <input type="number" id="concentration" step="0.01" value="1">
+    </div>
+
+    <div class="input-group">
+      <label for="continuous">Continuous Rate (mg/hr)</label>
+      <input type="number" id="continuous" step="0.01" value="0">
+    </div>
+
+    <div class="input-group">
+      <label for="demand">Demand Dose (mg)</label>
+      <input type="number" id="demand" step="0.01" value="0">
+    </div>
+
+    <div class="input-group">
+      <label for="duration">Duration of Therapy (hours)</label>
+      <input type="number" id="duration" step="0.1" value="1">
+    </div>
+
+    <div class="input-group">
+      <label for="presses">Number of Button Presses</label>
+      <input type="number" id="presses" value="0">
+    </div>
+
+    <button onclick="calculateDose()">Calculate</button>
+
+    <div class="results" id="results"></div>
+  </div>
+
+  <script>
+    function calculateDose() {
+      const concentration = parseFloat(document.getElementById('concentration').value);
+      const continuous = parseFloat(document.getElementById('continuous').value);
+      const demand = parseFloat(document.getElementById('demand').value);
+      const duration = parseFloat(document.getElementById('duration').value);
+      const presses = parseInt(document.getElementById('presses').value);
+
+      // Continuous (basal)
+      const basalMg = continuous * duration;
+      const basalMl = basalMg / concentration;
+
+      // Demand
+      const demandMg = demand * presses;
+      const demandMl = demandMg / concentration;
+
+      // Totals
+      const totalMg = basalMg + demandMg;
+      const totalMl = basalMl + demandMl;
+
+      document.getElementById('results').innerHTML = `
+        <p><strong>Basal:</strong> ${basalMg.toFixed(2)} mg (${basalMl.toFixed(2)} mL)</p>
+        <p><strong>Demand:</strong> ${demandMg.toFixed(2)} mg (${demandMl.toFixed(2)} mL)</p>
+        <p><strong>Total:</strong> ${totalMg.toFixed(2)} mg (${totalMl.toFixed(2)} mL)</p>
+      `;
+    }
+  </script>
+</body>
+</html>
