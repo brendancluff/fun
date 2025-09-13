@@ -28,6 +28,28 @@
         .map-btn:hover {
             background: #005bb5;
         }
+
+        .zoom-info {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: #f3f6fa;
+    border-left: 4px solid #0073e6;
+    border-radius: 6px;
+}
+
+.zoom-info h4 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+    color: #0073e6;
+}
+.zoom-info a {
+    color: #0073e6;
+    font-weight: bold;
+    text-decoration: none;
+}
+.zoom-info a:hover {
+    text-decoration: underline;
+}
     </style>
 </head>
 
@@ -74,6 +96,18 @@
                 <a href="#" class="map-btn" onclick="openMaps('google')">Open in Google Maps</a>
                 <a href="#" class="map-btn" onclick="openMaps('apple')">Open in Apple Maps</a>
             </div>
+
+            <!-- Zoom Info -->
+            <div class="zoom-info">
+                <h4>Join via Zoom</h4>
+                <p><strong>Topic:</strong> Mallie Cluffs Memorial Service </p>
+                <p><strong>Time:</strong> Sep 13, 2025 11:00 AM Arizona</p>
+                <p><a href="https://us05web.zoom.us/j/87126362903?pwd=feKrwrTICPwRsUqXzZ7CbhJ0KLH4Ph.1" target="_blank"
+                        rel="noopener noreferrer">Join Zoom Meeting</a></p>
+                <p><strong>Meeting ID:</strong> 871 2636 2903</p>
+                <p><strong>Passcode:</strong> peG4U7</p>
+            </div>
+
         </section>
 
         <!-- Slideshow -->
@@ -110,19 +144,19 @@
     </footer>
 
     <script>
-  // Open Maps links
-function openMaps(service) {
-    const address = encodeURIComponent("977 E Broadway Rd, Mesa, AZ 85204");
-    let url = "";
+        // Open Maps links
+        function openMaps(service) {
+            const address = encodeURIComponent("977 E Broadway Rd, Mesa, AZ 85204");
+            let url = "";
 
-    if (service === "google") {
-        url = `https://www.google.com/maps?q=${address}`;
-    } else if (service === "apple") {
-        url = `http://maps.apple.com/?q=${address}`;
-    }
+            if (service === "google") {
+                url = `https://www.google.com/maps?q=${address}`;
+            } else if (service === "apple") {
+                url = `http://maps.apple.com/?q=${address}`;
+            }
 
-    window.open(url, "_blank");
-}
+            window.open(url, "_blank");
+        }
 
     </script>
 </body>
