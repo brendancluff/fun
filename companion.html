@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Companion AI - Small Talk (Continuous)</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #eef2f7;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 450px;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        text-align: center;
+        color: #4A6FA5;
+        margin-bottom: 10px;
+    }
+
+    #conversation {
+        height: 260px;
+        overflow-y: auto;
+        background: #f7f9fc;
+        border: 1px solid #d8e0eb;
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .message {
+        padding: 8px 12px;
+        margin: 6px 0;
+        width: fit-content;
+        max-width: 80%;
+        border-radius: 12px;
+        font-size: 16px;
+    }
+
+    .user {
+        background: #d0e6ff;
+        margin-left: auto;
+    }
+
+    .bot {
+        background: #e8e8e8;
+        margin-right: auto;
+    }
+
+    #status {
+        text-align: center;
+        margin-top: 10px;
+        color: #4A6FA5;
+        font-size: 15px;
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Companion AI</h2>
+
+    <div id="conversation"></div>
+    <div id="status">Listening… 🎤</div>
+</div>
+
+<script>
+/* ---------------------
+   Speech Recognition
+---------------------- */
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+const recog = new SpeechRecognition();
+recog.lang = "en-US";
+recog.interimResults = false;
+recog.continuous = false; // must be false or Chrome bugs out
+
+const statusText = document.getElementById("status");
+
+/* ---------------------
+   Small-Talk Brain
+---------------------- */
+function getSmallTalkResponse(input) {
+    const msg = input.toLowerCase();
+
+    if (msg.includes("hello") || msg.includes("hi"))
+        return "Hello there. It’s so nice to talk with you.";
+
+    if (msg.includes("how are you"))
+        return "I'm feeling wonderful. How are you feeling today?";
+
+    if (msg.includes("weather"))
+        return "I hope it's pleasant where you are. Do you like warm or cool days?";
+
+    if (msg.includes("name"))
+        return "You can call me your companion. What should I call you?";
+
+    if (msg.includes("lonely"))
+        return "You're not alone. I'm right here with you.";
+
+    if (msg.includes("thank"))
+        return "You're very welcome. I enjoy our conversations.";
+
+    return "That sounds nice. Please tell me more.";
+}
+
+/* ---------------------
+   UI Helpers
+---------------------- */
+const convo = document.getElementById("conversation");
+
+function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = "message " + sender;
+    div.textContent = text;
+    convo.appendChild(div);
+    convo.scrollTop = convo.scrollHeight;
+}
+
+/* ---------------------
+   Text-to-Speech
+---------------------- */
+function speak(text, callback) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+
+    utter.onend = () => {
+        if (callback) callback();
+    };
+
+    speechSynthesis.speak(utter);
+}
+
+/* ---------------------
+   Continuous Loop
+---------------------- */
+function beginListening() {
+    try {
+        statusText.textContent = "Listening… 🎤";
+        recog.start();
+    } catch (e) {
+        // Avoid "recognition already started" errors
+    }
+}
+
+recog.onresult = (event) => {
+    const userText = event.results[0][0].transcript;
+    addMessage(userText, "user");
+
+    const response = getSmallTalkResponse(userText);
+    addMessage(response, "bot");
+
+    statusText.textContent = "Speaking… 🎧";
+
+    // Speak, then resume listening
+    speak(response, () => {
+        setTimeout(beginListening, 300); // slight delay prevents Chrome bug
+    });
+};
+
+recog.onerror = () => {
+    // Always restart listening after an error
+    setTimeout(beginListening, 500);
+};
+
+recog.onend = () => {
+    // Restart automatically unless speaking
+    if (!speechSynthesis.speaking) {
+        setTimeout(beginListening, 300);
+    }
+};
+
+// Start automatically
+beginListening();
+</script>
+
+</body>
+</html>
