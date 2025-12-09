@@ -66,34 +66,49 @@
         color: #4A6FA5;
         font-size: 15px;
     }
+
+    #startButton {
+        padding: 12px 20px;
+        font-size: 18px;
+        border-radius: 12px;
+        border: none;
+        background: #4A6FA5;
+        color: white;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 15px;
+    }
 </style>
 </head>
 
 <body>
 <div class="container">
+
+    <button id="startButton">Start Conversation</button>
+
     <h2>Companion AI</h2>
 
     <div id="conversation"></div>
-    <div id="status">Listening… 🎤</div>
+    <div id="status">Press “Start Conversation” to begin.</div>
 </div>
 
 <script>
-/* ---------------------
+/* -----------------------------
    Speech Recognition
----------------------- */
+------------------------------ */
 const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const recog = new SpeechRecognition();
 recog.lang = "en-US";
 recog.interimResults = false;
-recog.continuous = false; // must be false or Chrome bugs out
+recog.continuous = false;
 
 const statusText = document.getElementById("status");
 
-/* ---------------------
-   Small-Talk Brain
----------------------- */
+/* -----------------------------
+   Small-Talk Logic
+------------------------------ */
 function getSmallTalkResponse(input) {
     const msg = input.toLowerCase();
 
@@ -104,7 +119,7 @@ function getSmallTalkResponse(input) {
         return "I'm feeling wonderful. How are you feeling today?";
 
     if (msg.includes("weather"))
-        return "I hope it's pleasant where you are. Do you like warm or cool days?";
+        return "I hope it's pleasant where you are. Do you prefer warm or cool days?";
 
     if (msg.includes("name"))
         return "You can call me your companion. What should I call you?";
@@ -118,9 +133,9 @@ function getSmallTalkResponse(input) {
     return "That sounds nice. Please tell me more.";
 }
 
-/* ---------------------
+/* -----------------------------
    UI Helpers
----------------------- */
+------------------------------ */
 const convo = document.getElementById("conversation");
 
 function addMessage(text, sender) {
@@ -131,9 +146,9 @@ function addMessage(text, sender) {
     convo.scrollTop = convo.scrollHeight;
 }
 
-/* ---------------------
+/* -----------------------------
    Text-to-Speech
----------------------- */
+------------------------------ */
 function speak(text, callback) {
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 0.95;
@@ -146,15 +161,15 @@ function speak(text, callback) {
     speechSynthesis.speak(utter);
 }
 
-/* ---------------------
-   Continuous Loop
----------------------- */
+/* -----------------------------
+   Continuous Listening Loop
+------------------------------ */
 function beginListening() {
     try {
         statusText.textContent = "Listening… 🎤";
         recog.start();
     } catch (e) {
-        // Avoid "recognition already started" errors
+        // prevents 'already started' errors
     }
 }
 
@@ -167,26 +182,33 @@ recog.onresult = (event) => {
 
     statusText.textContent = "Speaking… 🎧";
 
-    // Speak, then resume listening
     speak(response, () => {
-        setTimeout(beginListening, 300); // slight delay prevents Chrome bug
+        setTimeout(beginListening, 300);
     });
 };
 
 recog.onerror = () => {
-    // Always restart listening after an error
     setTimeout(beginListening, 500);
 };
 
 recog.onend = () => {
-    // Restart automatically unless speaking
     if (!speechSynthesis.speaking) {
         setTimeout(beginListening, 300);
     }
 };
 
-// Start automatically
-beginListening();
+/* -----------------------------
+   Required Start Button (HTTPS)
+------------------------------ */
+document.getElementById("startButton").onclick = () => {
+    document.getElementById("startButton").style.display = "none";
+
+    statusText.textContent = "Starting conversation…";
+
+    setTimeout(() => {
+        beginListening();
+    }, 300);
+};
 </script>
 
 </body>
